@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GitHub Manager</title>
+  <meta name="description" content="A modern GitHub manager for repository creation, uploads, cleanup, and tree exploration." />
+  <link rel="stylesheet" href="./assets/styles/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero surface">
+      <div class="hero-copy">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75 0 4.31 2.794 7.968 6.67 9.258.488.09.668-.212.668-.472 0-.233-.009-.85-.013-1.668-2.713.589-3.285-1.309-3.285-1.309-.443-1.125-1.082-1.424-1.082-1.424-.884-.604.067-.592.067-.592.978.069 1.493 1.004 1.493 1.004.869 1.488 2.28 1.058 2.836.809.088-.63.34-1.058.618-1.301-2.166-.246-4.444-1.083-4.444-4.82 0-1.064.38-1.934 1.004-2.616-.101-.246-.435-1.238.096-2.58 0 0 .819-.262 2.685 1 .779-.217 1.616-.326 2.448-.33.832.004 1.67.113 2.45.33 1.865-1.262 2.683-1 2.683-1 .532 1.342.198 2.334.097 2.58.625.682 1.003 1.552 1.003 2.616 0 3.747-2.282 4.571-4.456 4.812.35.302.66.9.66 1.813 0 1.309-.012 2.365-.012 2.687 0 .262.176.566.674.47A9.753 9.753 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75Z"/>
+          </svg>
+        </div>
+        <div class="hero-text">
+          <div class="eyebrow">Professional repository operations</div>
+          <h1>GitHub Manager</h1>
+          <p>Compact UI, modular architecture, safer flows, and fast repository operations for create, upload, cleanup, and explore.</p>
+          <div class="hero-actions">
+            <button class="button primary" type="button" data-action="focus-connect">Connect GitHub</button>
+            <button class="button secondary" type="button" data-action="focus-workspace">Open workspace</button>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <article class="stat-card">
+          <span class="stat-label">Connection</span>
+          <strong class="stat-value" id="heroConnection">Idle</strong>
+          <span class="stat-meta" id="heroUser">No user</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Workspace</span>
+          <strong class="stat-value" id="heroWorkspace">No target</strong>
+          <span class="stat-meta" id="heroBranch">Branch —</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Rate limit</span>
+          <strong class="stat-value" id="heroRateRemaining">—</strong>
+          <span class="stat-meta" id="heroRateReset">Reset —</span>
+        </article>
+      </div>
+    </header>
+
+    <section class="control-grid">
+      <article class="surface card" id="connect-panel">
+        <div class="card-head">
+          <div>
+            <div class="section-kicker">Session</div>
+            <h2>Connect</h2>
+          </div>
+          <div class="inline-badge" id="apiBaseBadge">https://api.github.com</div>
+        </div>
+        <div class="form-grid two">
+          <label class="field">
+            <span>API base URL</span>
+            <input id="apiBase" class="input" type="url" value="https://api.github.com" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Personal access token</span>
+            <div class="input-group">
+              <input id="token" class="input" type="password" placeholder="github_pat_... or ghp_..." autocomplete="off" />
+              <button id="toggleToken" class="button tertiary" type="button">Show</button>
+            </div>
+          </label>
+        </div>
+        <div class="toolbar">
+          <label class="toggle">
+            <input id="rememberToken" type="checkbox" />
+            <span>Remember token locally</span>
+          </label>
+          <div class="toolbar-actions">
+            <button id="connectButton" class="button primary" type="button">Verify token</button>
+            <button id="clearTokenButton" class="button tertiary" type="button">Clear saved token</button>
+          </div>
+        </div>
+        <div class="info-stack">
+          <div class="identity-card is-hidden" id="identityCard">
+            <img id="identityAvatar" alt="" />
+            <div>
+              <strong id="identityLogin">—</strong>
+              <div class="subtle" id="identityName">—</div>
+              <a id="identityLink" class="text-link" href="#" target="_blank" rel="noreferrer">Open profile</a>
+            </div>
+          </div>
+          <div class="meta-grid compact">
+            <div class="meta-panel">
+              <span>Accepted permissions</span>
+              <strong id="acceptedPermissions">—</strong>
+            </div>
+            <div class="meta-panel">
+              <span>Token scopes</span>
+              <strong id="oauthScopes">—</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="surface card" id="workspace-panel">
+        <div class="card-head">
+          <div>
+            <div class="section-kicker">Target</div>
+            <h2>Workspace</h2>
+          </div>
+          <button id="copyWorkspaceButton" class="button tertiary" type="button">Copy owner/repo</button>
+        </div>
+        <div class="form-grid two">
+          <label class="field">
+            <span>Owner</span>
+            <input id="workspaceOwner" class="input" placeholder="octocat" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Repository</span>
+            <input id="workspaceRepo" class="input" placeholder="hello-world" autocomplete="off" />
+          </label>
+        </div>
+        <div class="form-grid two">
+          <label class="field">
+            <span>Working branch</span>
+            <input id="workspaceBranch" class="input" placeholder="main" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Available branches</span>
+            <select id="branchPicker" class="input">
+              <option value="">Load a repository first</option>
+            </select>
+          </label>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button id="loadWorkspaceButton" class="button primary" type="button">Load repository</button>
+            <button id="syncDefaultBranchButton" class="button tertiary" type="button">Use default branch</button>
+          </div>
+        </div>
+        <div class="meta-grid" id="workspaceMeta">
+          <div class="meta-panel">
+            <span>Full name</span>
+            <strong id="repoFullName">—</strong>
+          </div>
+          <div class="meta-panel">
+            <span>Visibility</span>
+            <strong id="repoVisibility">—</strong>
+          </div>
+          <div class="meta-panel">
+            <span>Default branch</span>
+            <strong id="repoDefaultBranch">—</strong>
+          </div>
+          <div class="meta-panel">
+            <span>Open repository</span>
+            <strong><a id="repoLink" class="text-link" href="#" target="_blank" rel="noreferrer">GitHub</a></strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <nav class="workspace-tabs surface">
+      <button class="tab is-active" type="button" data-tab="overview">Overview</button>
+      <button class="tab" type="button" data-tab="uploader">Uploader</button>
+      <button class="tab" type="button" data-tab="cleaner">Cleaner</button>
+      <button class="tab" type="button" data-tab="explorer">Explorer</button>
+      <button class="tab" type="button" data-tab="logs">Logs</button>
+    </nav>
+
+    <section class="tab-panel" data-panel="overview">
+      <div class="content-grid two-equal">
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Repository lifecycle</div>
+              <h2>Create repository</h2>
+            </div>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Name</span>
+              <input id="createRepoName" class="input" placeholder="my-new-repo" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Visibility</span>
+              <select id="createRepoVisibility" class="input">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Description</span>
+              <input id="createRepoDescription" class="input" placeholder="Repository description" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Homepage</span>
+              <input id="createRepoHomepage" class="input" type="url" placeholder="https://example.com" autocomplete="off" />
+            </label>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>.gitignore template</span>
+              <input id="createRepoGitignore" class="input" placeholder="Node" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>License template</span>
+              <input id="createRepoLicense" class="input" placeholder="mit" autocomplete="off" />
+            </label>
+          </div>
+          <div class="toolbar">
+            <label class="toggle">
+              <input id="createRepoAutoInit" type="checkbox" checked />
+              <span>Initialize with README</span>
+            </label>
+            <div class="toolbar-actions">
+              <button id="createRepoButton" class="button success" type="button">Create repository</button>
+            </div>
+          </div>
+          <div class="result-card is-hidden" id="createRepoResult"></div>
+        </article>
+
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Destructive operation</div>
+              <h2>Delete repository</h2>
+            </div>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Owner</span>
+              <input id="deleteRepoOwner" class="input" placeholder="octocat" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Repository</span>
+              <input id="deleteRepoName" class="input" placeholder="danger-zone" autocomplete="off" />
+            </label>
+          </div>
+          <label class="field">
+            <span>Type owner/repo to confirm</span>
+            <input id="deleteRepoConfirmation" class="input mono" placeholder="octocat/danger-zone" autocomplete="off" />
+          </label>
+          <div class="toolbar">
+            <div class="meta-inline subtle">Requires repository administration permission.</div>
+            <div class="toolbar-actions">
+              <button id="deleteRepoButton" class="button danger" type="button">Delete repository</button>
+            </div>
+          </div>
+          <div class="result-card is-hidden" id="deleteRepoResult"></div>
+        </article>
+      </div>
+
+      <div class="content-grid two-equal">
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Operational insight</div>
+              <h2>Capability guide</h2>
+            </div>
+          </div>
+          <div class="feature-list">
+            <div class="feature-item">
+              <strong>Read repository metadata</strong>
+              <span>Metadata: read</span>
+            </div>
+            <div class="feature-item">
+              <strong>Upload, update, and delete files</strong>
+              <span>Contents: write</span>
+            </div>
+            <div class="feature-item">
+              <strong>Create and delete repositories</strong>
+              <span>Administration: write</span>
+            </div>
+            <div class="feature-item">
+              <strong>Branch inspection</strong>
+              <span>Contents: read</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Current state</div>
+              <h2>Session overview</h2>
+            </div>
+          </div>
+          <div class="meta-grid">
+            <div class="meta-panel">
+              <span>Connected user</span>
+              <strong id="overviewUser">—</strong>
+            </div>
+            <div class="meta-panel">
+              <span>Repository</span>
+              <strong id="overviewRepo">—</strong>
+            </div>
+            <div class="meta-panel">
+              <span>Branch</span>
+              <strong id="overviewBranch">—</strong>
+            </div>
+            <div class="meta-panel">
+              <span>Upload queue</span>
+              <strong id="overviewQueue">0 files</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel is-hidden" data-panel="uploader">
+      <div class="content-grid uploader-layout">
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Commit content</div>
+              <h2>Uploader</h2>
+            </div>
+            <div class="inline-badge"><span id="uploadCount">0</span> files · <span id="uploadBytes">0 B</span></div>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Base path in repository</span>
+              <input id="uploadBasePath" class="input mono" placeholder="releases/2026" autocomplete="off" />
+            </label>
+            <label class="field">
+              <span>Commit message</span>
+              <input id="uploadCommitMessage" class="input" value="Upload via GitHub Manager" autocomplete="off" />
+            </label>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Blob concurrency</span>
+              <select id="uploadConcurrency" class="input">
+                <option value="2">2 workers</option>
+                <option value="3">3 workers</option>
+                <option value="4" selected>4 workers</option>
+                <option value="6">6 workers</option>
+                <option value="8">8 workers</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Selection</span>
+              <div class="toolbar-actions">
+                <button id="pickFilesButton" class="button secondary" type="button">Choose files</button>
+                <button id="pickFolderButton" class="button secondary" type="button">Choose folder</button>
+                <button id="clearQueueButton" class="button tertiary" type="button">Clear queue</button>
+              </div>
+            </div>
+          </div>
+          <input id="filesInput" class="is-hidden" type="file" multiple />
+          <input id="folderInput" class="is-hidden" type="file" multiple webkitdirectory directory />
+          <label class="dropzone" id="dropzone" tabindex="0">
+            <strong>Drop files here</strong>
+            <span>Or click to choose files. Folder upload works in browsers that support directory selection.</span>
+          </label>
+          <div class="callout warning is-hidden" id="uploadWarnings"></div>
+          <div class="toolbar">
+            <div class="meta-inline subtle">The app automatically bootstraps empty repositories before using tree-based uploads.</div>
+            <div class="toolbar-actions">
+              <button id="uploadButton" class="button primary" type="button">Upload and commit</button>
+            </div>
+          </div>
+          <div class="progress-card is-hidden" id="uploadProgress">
+            <div class="progress-head">
+              <strong id="uploadProgressLabel">Idle</strong>
+              <span id="uploadProgressValue">0%</span>
+            </div>
+            <div class="progress-bar"><div id="uploadProgressBar"></div></div>
+            <div class="subtle" id="uploadProgressMessage"></div>
+          </div>
+        </article>
+
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Queued files</div>
+              <h2>Selection</h2>
+            </div>
+          </div>
+          <div class="list-shell" id="queueList"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel is-hidden" data-panel="cleaner">
+      <div class="content-grid two-equal">
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Remove content</div>
+              <h2>Cleaner</h2>
+            </div>
+          </div>
+          <div class="form-grid two">
+            <label class="field">
+              <span>Mode</span>
+              <select id="cleanerMode" class="input">
+                <option value="file">Single file</option>
+                <option value="folder-contents">Folder via Contents API</option>
+                <option value="folder-tree">Folder via Trees API</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Commit message</span>
+              <input id="cleanerCommitMessage" class="input" value="Delete via GitHub Manager" autocomplete="off" />
+            </label>
+          </div>
+          <label class="field">
+            <span>Path</span>
+            <input id="cleanerPath" class="input mono" placeholder="dist/app.js or dist/" autocomplete="off" />
+          </label>
+          <div class="toolbar">
+            <label class="toggle">
+              <input id="cleanerSafety" type="checkbox" />
+              <span>I understand this action is destructive</span>
+            </label>
+            <div class="toolbar-actions">
+              <button id="cleanerDryRunButton" class="button warning" type="button">Dry run</button>
+              <button id="cleanerExecuteButton" class="button danger" type="button">Delete path</button>
+            </div>
+          </div>
+          <div class="result-card is-hidden" id="cleanerResult"></div>
+        </article>
+
+        <article class="surface card">
+          <div class="card-head">
+            <div>
+              <div class="section-kicker">Preview</div>
+              <h2>Dry-run result</h2>
+            </div>
+            <div class="inline-badge" id="cleanerPreviewCount">0 items</div>
+          </div>
+          <div class="list-shell" id="cleanerPreviewList"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel is-hidden" data-panel="explorer">
+      <article class="surface card">
+        <div class="card-head">
+          <div>
+            <div class="section-kicker">Repository tree</div>
+            <h2>Explorer</h2>
+          </div>
+          <div class="inline-badge"><span id="explorerCount">0</span> items</div>
+        </div>
+        <div class="form-grid three">
+          <label class="field">
+            <span>Prefix filter</span>
+            <input id="explorerPrefix" class="input mono" placeholder="src/ or dist/" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Display limit</span>
+            <select id="explorerLimit" class="input">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+            </select>
+          </label>
+          <div class="field">
+            <span>Actions</span>
+            <div class="toolbar-actions">
+              <button id="loadExplorerButton" class="button primary" type="button">Load tree</button>
+              <button id="usePrefixInCleanerButton" class="button tertiary" type="button">Use prefix in cleaner</button>
+            </div>
+          </div>
+        </div>
+        <div class="progress-card is-hidden" id="explorerStatus">
+          <div class="progress-head">
+            <strong id="explorerStatusLabel">Idle</strong>
+            <span id="explorerStatusValue">0</span>
+          </div>
+          <div class="subtle" id="explorerStatusMessage"></div>
+        </div>
+        <div class="list-shell" id="explorerList"></div>
+      </article>
+    </section>
+
+    <section class="tab-panel is-hidden" data-panel="logs">
+      <article class="surface card">
+        <div class="card-head">
+          <div>
+            <div class="section-kicker">Diagnostics</div>
+            <h2>Logs</h2>
+          </div>
+          <button id="clearLogsButton" class="button tertiary" type="button">Clear logs</button>
+        </div>
+        <pre class="log-box" id="logOutput"></pre>
+      </article>
+    </section>
+
+    <footer class="page-footer">
+      <span>Coded with ❤️ by <a href="https://ziolken.pages.dev/" rel="noreferrer noopener" target="_blank" class="zkn">ZiolKen</a></span>
+    </footer>
+  </div>
+
+  <script type="module" src="./assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Repo Tool (Create / Delete)</title>
+  <style>
+:root{
+  --bg:#0b0d12;
+  --card:#121624;
+  --text:#e9eefc;
+  --muted:#9aa6c3;
+  --line:#232b41;
+  --btn:#3b82f6;
+  --btn2:#23304e;
+  --danger:#ef4444;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 20% 0%, #101a35 0%, var(--bg) 55%);
+  color:var(--text);
+}
+
+.container{max-width:980px;margin:28px auto;padding:0 16px}
+.header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+h1{margin:0 0 6px 0;font-size:28px}
+h2{margin:0 0 10px 0;font-size:18px}
+.muted{color:var(--muted)}
+.pill{
+  border:1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  padding:10px 12px;border-radius:999px;
+  font-size:13px;white-space:nowrap
+}
+
+.card{
+  border:1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border-radius:14px;
+  padding:16px;
+  margin:12px 0;
+}
+
+.grid{display:grid;gap:12px}
+.grid.two{grid-template-columns: 1fr 1fr}
+@media (max-width: 760px){ .grid.two{grid-template-columns:1fr} }
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field > span{font-size:13px;color:var(--muted)}
+.field small{margin-top:2px}
+input, select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background: rgba(10,12,18,0.65);
+  color: var(--text);
+  outline:none;
+}
+input:focus, select:focus{border-color:#3b82f6}
+
+.row{display:flex;gap:10px;align-items:center}
+.actions{margin-top:12px}
+
+.checkbox{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+.checkbox input{width:auto}
+
+.btn{
+  border:1px solid rgba(255,255,255,0.12);
+  background: var(--btn);
+  color:white;
+  padding:10px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+.btn.secondary{background: var(--btn2)}
+.btn.danger{background: var(--danger)}
+.btn.ghost{background: transparent}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+
+.userbox{
+  margin-top:12px;
+  display:flex;gap:12px;align-items:center;
+  border:1px dashed rgba(255,255,255,0.15);
+  padding:10px;border-radius:12px;
+}
+.userbox img{width:42px;height:42px;border-radius:50%}
+.userline{display:flex;gap:10px;align-items:baseline}
+
+.tabs{display:flex;gap:10px;margin-bottom:12px}
+.tab{
+  background: transparent;
+  border:1px solid var(--line);
+  color:var(--muted);
+  padding:8px 10px;
+  border-radius:10px;
+  cursor:pointer;
+}
+.tab.active{
+  color:var(--text);
+  border-color: rgba(59,130,246,.6);
+  background: rgba(59,130,246,.12);
+}
+
+.result{
+  margin-top:12px;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.25);
+  border-radius:12px;
+  padding:10px;
+  white-space: pre-wrap;
+}
+
+.log{
+  margin:0;
+  min-height: 110px;
+  max-height: 320px;
+  overflow:auto;
+  border-radius:12px;
+  padding:10px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+}
+
+.hidden{display:none}
+.footer{margin:14px 0 26px 0;font-size:13px;display:flex;align-items:center;justify-content:center}
+code{background: rgba(255,255,255,0.06); padding:2px 6px;border-radius:7px}
+.zkn{font-weight:bold;color:blue}
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <div>
+        <h1>GitHub Repo Tool</h1>
+        <p class="muted">Create / Delete repo using PAT</p>
+      </div>
+      <div class="pill">API: <span id="apiBaseLabel">https://api.github.com</span></div>
+    </header>
+
+    <section class="card">
+      <h2>1) Connect</h2>
+
+      <div class="grid two">
+        <label class="field">
+          <span>API Base URL</span>
+          <input id="apiBase" type="url" value="https://api.github.com" spellcheck="false" />
+          <small class="muted">Keep it empty or default if using github.com</small>
+        </label>
+
+        <label class="field">
+          <span>Personal Access Token (PAT)</span>
+          <div class="row">
+            <input id="token" type="password" placeholder="ghp_... / github_pat_..." spellcheck="false" />
+            <button id="toggleToken" class="btn secondary" type="button">Show</button>
+          </div>
+          <div class="row">
+            <label class="checkbox">
+              <input id="rememberToken" type="checkbox" />
+              <span>Save token (localStorage) — not recommend if using shared machine.</span>
+            </label>
+          </div>
+        </label>
+      </div>
+
+      <div class="row actions">
+        <button id="btnConnect" class="btn" type="button">Check token / get user</button>
+        <button id="btnClear" class="btn danger ghost" type="button">Delete saved token</button>
+      </div>
+
+      <div id="userBox" class="userbox hidden">
+        <img id="avatar" alt="avatar" />
+        <div>
+          <div class="userline">
+            <strong id="login">—</strong>
+            <span class="muted" id="name">—</span>
+          </div>
+          <div class="muted" id="profileUrl">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs">
+        <button class="tab active" data-tab="create">Create repo</button>
+        <button class="tab" data-tab="delete">Delete repo</button>
+      </div>
+
+      <div id="tab-create" class="tabpane">
+        <h2>2) Create repo</h2>
+
+        <div class="grid two">
+          <label class="field">
+            <span>Repo name (required)</span>
+            <input id="c_name" type="text" placeholder="my-new-repo" spellcheck="false" />
+          </label>
+
+          <label class="field">
+            <span>Visibility</span>
+            <select id="c_private">
+              <option value="false">Public</option>
+              <option value="true">Private</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Description</span>
+            <input id="c_desc" type="text" placeholder="Short description..." />
+          </label>
+
+          <label class="field">
+            <span>Homepage</span>
+            <input id="c_homepage" type="url" placeholder="https://..." spellcheck="false" />
+          </label>
+
+          <label class="field">
+            <span>.gitignore template (optional)</span>
+            <input id="c_gitignore" type="text" placeholder="Node, Python, Go, ..." spellcheck="false" />
+          </label>
+
+          <label class="field">
+            <span>License template (optional)</span>
+            <input id="c_license" type="text" placeholder="mit, apache-2.0, gpl-3.0, ..." spellcheck="false" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="checkbox">
+            <input id="c_autoinit" type="checkbox" />
+            <span>Create README (auto_init)</span>
+          </label>
+        </div>
+
+        <div class="row actions">
+          <button id="btnCreate" class="btn" type="button">Create repo</button>
+        </div>
+
+        <div id="createResult" class="result hidden"></div>
+      </div>
+
+      <div id="tab-delete" class="tabpane hidden">
+        <h2>3) Delete repo</h2>
+        <p class="muted">Warning: Delete repo action is cannot be undone. GitHub require admin perm to delete. :contentReference[oaicite:7]{index=7}</p>
+
+        <div class="grid two">
+          <label class="field">
+            <span>Owner (username/org)</span>
+            <input id="d_owner" type="text" placeholder="octocat" spellcheck="false" />
+          </label>
+
+          <label class="field">
+            <span>Repo name</span>
+            <input id="d_repo" type="text" placeholder="old-repo" spellcheck="false" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Enter <code>owner/repo</code> to confirm</span>
+          <input id="d_confirm" type="text" placeholder="vd: octocat/old-repo" spellcheck="false" />
+        </label>
+
+        <div class="row actions">
+          <button id="btnDelete" class="btn danger" type="button">Delete repo</button>
+        </div>
+
+        <div id="deleteResult" class="result hidden"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Log</h2>
+      <pre id="log" class="log"></pre>
+    </section>
+
+    <footer class="footer muted">
+      Coded with ❤️ by <a href="https://ziolken.pages.dev" rel="noreferrer noopener" target="_blank" class="zkn"> ZiolKen</a>
+    </footer>
+  </main>
+
+  <script>
+const $ = (sel) => document.querySelector(sel);
+
+const els = {
+  apiBase: $("#apiBase"),
+  apiBaseLabel: $("#apiBaseLabel"),
+  token: $("#token"),
+  rememberToken: $("#rememberToken"),
+  toggleToken: $("#toggleToken"),
+  btnConnect: $("#btnConnect"),
+  btnClear: $("#btnClear"),
+  userBox: $("#userBox"),
+  avatar: $("#avatar"),
+  login: $("#login"),
+  name: $("#name"),
+  profileUrl: $("#profileUrl"),
+
+  // tabs
+  tabs: document.querySelectorAll(".tab"),
+  tabCreate: $("#tab-create"),
+  tabDelete: $("#tab-delete"),
+
+  // create
+  c_name: $("#c_name"),
+  c_desc: $("#c_desc"),
+  c_homepage: $("#c_homepage"),
+  c_private: $("#c_private"),
+  c_autoinit: $("#c_autoinit"),
+  c_gitignore: $("#c_gitignore"),
+  c_license: $("#c_license"),
+  btnCreate: $("#btnCreate"),
+  createResult: $("#createResult"),
+
+  // delete
+  d_owner: $("#d_owner"),
+  d_repo: $("#d_repo"),
+  d_confirm: $("#d_confirm"),
+  btnDelete: $("#btnDelete"),
+  deleteResult: $("#deleteResult"),
+
+  log: $("#log"),
+};
+
+const STORAGE_KEY = "gh_repo_tool_token_v1";
+
+function logLine(...parts) {
+  const ts = new Date().toISOString();
+  els.log.textContent += `[${ts}] ${parts.join(" ")}\n`;
+  els.log.scrollTop = els.log.scrollHeight;
+}
+
+function showResult(el, msg) {
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
+
+function hideResult(el) {
+  el.textContent = "";
+  el.classList.add("hidden");
+}
+
+function getApiBase() {
+  const v = (els.apiBase.value || "https://api.github.com").trim().replace(/\/+$/, "");
+  els.apiBaseLabel.textContent = v;
+  return v;
+}
+
+function getToken() {
+  return (els.token.value || "").trim();
+}
+
+function buildHeaders() {
+  const token = getToken();
+  const h = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) h["Authorization"] = `Bearer ${token}`;
+  return h;
+}
+
+async function ghFetch(path, options = {}) {
+  const base = getApiBase();
+  const url = path.startsWith("http") ? path : `${base}${path}`;
+
+  const res = await fetch(url, {
+    method: options.method || "GET",
+    headers: { ...buildHeaders(), ...(options.headers || {}) },
+    body: options.body,
+    cache: "no-store",
+  });
+
+  const contentType = res.headers.get("content-type") || "";
+  let data = null;
+
+  if (res.status !== 204) {
+    if (contentType.includes("application/json")) {
+      data = await res.json().catch(() => null);
+    } else {
+      data = await res.text().catch(() => null);
+    }
+  }
+
+  if (!res.ok) {
+    const msg = (data && data.message) ? data.message : (typeof data === "string" ? data : "Request failed");
+    const err = new Error(`${res.status} ${res.statusText}: ${msg}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+
+  return { res, data };
+}
+
+function pickNonEmpty(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+async function connect() {
+  hideResult(els.createResult);
+  hideResult(els.deleteResult);
+
+  const token = getToken();
+  if (!token) {
+    alert("Enter PAT first.");
+    return;
+  }
+
+  logLine("Connecting… GET /user");
+  // Get the authenticated user: GET /user :contentReference[oaicite:8]{index=8}
+  const { data } = await ghFetch("/user");
+
+  els.userBox.classList.remove("hidden");
+  els.avatar.src = data.avatar_url || "";
+  els.login.textContent = data.login || "unknown";
+  els.name.textContent = data.name ? `(${data.name})` : "";
+  els.profileUrl.textContent = data.html_url || "";
+
+  els.d_owner.value = data.login || "";
+
+  if (els.rememberToken.checked) {
+    localStorage.setItem(STORAGE_KEY, token);
+    logLine("Token saved to localStorage (remember checked).");
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+    logLine("Token NOT saved (remember unchecked).");
+  }
+
+  logLine("Connected as:", data.login);
+}
+
+async function createRepo() {
+  hideResult(els.createResult);
+
+  const name = (els.c_name.value || "").trim();
+  if (!name) {
+    alert("Repo name is required.");
+    return;
+  }
+
+  const payload = pickNonEmpty({
+    name,
+    description: els.c_desc.value,
+    homepage: els.c_homepage.value,
+    private: els.c_private.value === "true",
+    auto_init: !!els.c_autoinit.checked,
+    gitignore_template: els.c_gitignore.value,
+    license_template: els.c_license.value,
+  });
+
+  logLine("Creating repo… POST /user/repos", JSON.stringify(payload));
+  // Create repo for authenticated user: POST /user/repos :contentReference[oaicite:9]{index=9}
+  const { data } = await ghFetch("/user/repos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const msg =
+`✅ Created: ${data.full_name}
+URL: ${data.html_url}
+Clone (HTTPS): ${data.clone_url}
+Clone (SSH):   ${data.ssh_url}
+Visibility: ${data.private ? "private" : "public"}`;
+
+  showResult(els.createResult, msg);
+  logLine("Created repo:", data.full_name);
+}
+
+async function deleteRepo() {
+  hideResult(els.deleteResult);
+
+  const owner = (els.d_owner.value || "").trim();
+  const repo = (els.d_repo.value || "").trim();
+  if (!owner || !repo) {
+    alert("Enter owner and repo.");
+    return;
+  }
+
+  const expected = `${owner}/${repo}`;
+  const confirmText = (els.d_confirm.value || "").trim();
+  if (confirmText !== expected) {
+    alert(`You need enter "${expected}" to confirm.`);
+    return;
+  }
+
+  const ok = confirm(`Delete ${expected}? Action cannot be undone..`);
+  if (!ok) return;
+
+  logLine("Deleting repo… DELETE /repos/" + expected);
+  // Delete a repository: DELETE /repos/{owner}/{repo} :contentReference[oaicite:10]{index=10}
+  await ghFetch(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, {
+    method: "DELETE",
+  });
+
+  showResult(els.deleteResult, `🗑️ Deleted: ${expected} (HTTP 204)`);
+  logLine("Deleted repo:", expected);
+
+  els.d_confirm.value = "";
+}
+
+function switchTab(tabName) {
+  els.tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
+  els.tabCreate.classList.toggle("hidden", tabName !== "create");
+  els.tabDelete.classList.toggle("hidden", tabName !== "delete");
+  hideResult(els.createResult);
+  hideResult(els.deleteResult);
+}
+
+function loadSavedTokenIfAny() {
+  const t = localStorage.getItem(STORAGE_KEY);
+  if (t) {
+    els.token.value = t;
+    els.rememberToken.checked = true;
+    logLine("Loaded token from localStorage.");
+  }
+}
+
+function clearSavedToken() {
+  localStorage.removeItem(STORAGE_KEY);
+  els.token.value = "";
+  els.rememberToken.checked = false;
+  logLine("Cleared saved token.");
+  alert("Deleted saved token.");
+}
+
+function toggleTokenVisibility() {
+  if (els.token.type === "password") {
+    els.token.type = "text";
+    els.toggleToken.textContent = "Hidden";
+  } else {
+    els.token.type = "password";
+    els.toggleToken.textContent = "Show";
+  }
+}
+
+function wireUI() {
+  els.apiBase.addEventListener("input", () => getApiBase());
+
+  els.btnConnect.addEventListener("click", () =>
+    connect().catch(err => {
+      logLine("Connect error:", err.message);
+      alert(err.message);
+    })
+  );
+
+  els.btnCreate.addEventListener("click", () =>
+    createRepo().catch(err => {
+      logLine("Create error:", err.message);
+      showResult(els.createResult, `❌ ${err.message}\n\n${JSON.stringify(err.data, null, 2)}`);
+    })
+  );
+
+  els.btnDelete.addEventListener("click", () =>
+    deleteRepo().catch(err => {
+      logLine("Delete error:", err.message);
+      showResult(els.deleteResult, `❌ ${err.message}\n\n${JSON.stringify(err.data, null, 2)}`);
+    })
+  );
+
+  els.btnClear.addEventListener("click", clearSavedToken);
+  els.toggleToken.addEventListener("click", toggleTokenVisibility);
+
+  els.tabs.forEach(t => t.addEventListener("click", () => switchTab(t.dataset.tab)));
+}
+
+(function init() {
+  getApiBase();
+  loadSavedTokenIfAny();
+  wireUI();
+  logLine("Ready.");
+})();
+  </script>
+</body>
+
+</html>
